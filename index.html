@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<html>
+<style>
+  * {
+    padding: 0;
+    margin: 0;
+  }
+
+  table {
+    margin: 15px;
+  }
+
+  table,
+  th,
+  td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px 10px;
+    text-align: left;
+  }
+
+  input,
+  select {
+    width: 90%;
+    border: 0;
+  }
+
+  input:focus-visible,
+  select:focus-visible {
+    outline: none;
+  }
+
+  .layer {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+  .layer2 {
+    position: absolute;
+    left: 450px;
+    top: 0px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+  .layer3 {
+    position: absolute;
+    left: 0px;
+    top: 350px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+  .layer4 {
+    position: absolute;
+    left: 450px;
+    top: 350px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+</style>
+
+<body>
+
+  <body style="background-color:white;">
+    <div style="background-color: rgb(25, 197, 249);padding: 7px;">
+      <h5 style="text-align: center;">Layout P&R Dashboard</h5>
+    </div>
+
+    <div style="display: flex;">
+      <div style="width: 30%;">
+        <table style="width: 90%;">
+          <thead>
+            <tr>
+              <th>Reference_Cell</th>
+              <th><input placeholder="user_provided_input_cell" /></th>
+            </tr>
+          </thead>
+          <tr>
+            <td>library</td>
+            <td>
+              <div id="library_div">
+            </td>
+          </tr>
+          <tr>
+            <td>family</td>
+            <td>
+              <div id="family_div">
+            </td>
+          </tr>
+
+          <tr>
+            <td>Cells</td>
+            <td>
+              <div id="cells_div"></div>
+            </td>
+          </tr>
+
+        </table>
+
+        <table style="width: 90%;margin-top: 50px; position:relative" id="layer_table">
+
+        </table>
+      </div>
+
+      <div style="width: 90%;margin-top: 50px; position:relative" id="layers_chart">
+      </div>
+    </div>
+
+
+    <script>
+      let masterData = [];
+      $(document).ready(function () {
+        $.ajax({
+          url: "/list"
+        }).then((data) => {
+          console.log('datadata', data);
+          masterData = data;
+          renderHtml();
+        });
+      });
+
+      function renderHtml() {
+        showLibrary();
+        showFamilies();
+        showCells();
+
+      }
+
+      function getLibraryById(libId) {
+        for (let i = 0; i < masterData.length; i++) {
+          if (libId == masterData[i].id) {
+            return masterData[i];
+          }
+        }
+        return false;
+      }
+
+      function showLibrary() {
+        let htmlString = `<select name="All" id="library" onchange="onChangeLibrary(this)">
+                          <option value="">All</option>`;
+        for (let i = 0; i < masterData.length; i++) {
+          htmlString += `<option value="${masterData[i].id}">${masterData[i].id}</option>`
+        }
+        htmlString += '</select>';
+        $("#library_div").html(htmlString)
+      }
+
+      function onChangeLibrary(event) {
+        console.log('onchange library ', event.value);
+        let find = false;
+        const libData = getLibraryById(event.value);
+        libData ? showFamilies(event.value, libData.families) : showFamilies();
+      }
+
+      function showFamilies(libId = '', familyData = []) {
+        let htmlString = `<select id="families" onchange="onChangeFamily(this)">
+                          <option value="">All</option>`;
+        for (let i = 0; i < familyData.length; i++) {
+          htmlString += `<option value="${libId}||${familyData[i]}">${familyData[i]}</option>`
+        }
+        htmlString += '</select>';
+        $("#family_div").html(htmlString)
+
+      }
+
+      function onChangeFamily(event) {
+        const arr = event.value.split("||");
+        const libId = arr[0];
+        const libData = getLibraryById(libId);
+        console.log('libData', libData);
+        libData ? showCells(arr[0], arr[1], libData.files) : showCells();
+      }
+
+      function showCells(libId = '', familyId = '', files = []) {
+        let cells = [];
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].includes(libId + familyId)) {
+            const arr = files[i].split('/');
+            var cell = arr[arr.length - 2] || arr[arr.length - 1];
+            cell && cells.push(cell);
+          }
+        }
+        cells = [...new Set(cells)];
+        let htmlString = `<select id="families" onchange="onChangeCells(this)">
+                          <option value="">All</option>`;
+        for (let i = 0; i < cells.length; i++) {
+          htmlString += `<option value="${libId}||${familyId}||${cells[i]}">${cells[i]}</option>`
+        }
+        htmlString += '</select>';
+        $("#cells_div").html(htmlString)
+      }
+
+      function onChangeCells(event) {
+        const arr = event.value.split("||");
+        const libId = arr[0];
+        const libData = getLibraryById(libId);
+        libData ? showLayersOption(arr[0], arr[2], libData.files, libData.path) : showLayersOption();
+      }
+
+      function showLayersOption(libId = '', cellId = '', files = [], rootDir = '') {
+        let layers = [];
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].includes(cellId)) {
+            const arr = files[i].split('/');
+            const layer = files[i].replace(/^.*[\\\/]/, '');
+            layer && layers.push({ layer, file: files[i] });
+          }
+        }
+        if (layers.length) {
+          let htmlString = `<tr>
+		          <th style="width: 50%;">Layers</th>
+              <th style="width: 50%;">Visibility</th>
+             </tr>`;
+          for (let i = 0; i < layers.length; i++) {
+            const imgPath = `${libId}/${layers[i].file}`;
+            htmlString += `<tr>
+							<td>${layers[i].layer}</td>
+							<td>
+								<input type="checkbox" class="layer-selector" id="layer_${`${libId}_${cellId}`}_${i}" img_url="${imgPath}" />
+							</td>
+						</tr>`
+          }
+
+          $("#layer_table").html(htmlString);
+
+          $('input.layer-selector').on('change', function () {
+            console.log('i am here', this);
+            if (this.checked) {
+              addLayer(this.id, $("#" + this.id).attr("img_url"));
+            } else {
+              removeLayer(this.id);
+            }
+          });
+        }
+      }
+
+
+
+      function addLayer(id, imageUrl) {
+        let htmlString = `<embed id="layer_image_${id}" class="layer" src="${imageUrl}" />`
+        $("#layers_chart").append(htmlString);
+      }
+
+      function removeLayer(id) {
+        $('#layer_image_' + id).remove();
+      }
+
+    </script>
+  </body>
+
+</html>
