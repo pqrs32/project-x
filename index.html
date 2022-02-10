@@ -135,9 +135,8 @@
       let masterData = [];
       $(document).ready(function () {
         $.ajax({
-          url: "/list"
+          url: "/init"
         }).then((data) => {
-          console.log('datadata', data);
           masterData = data;
           renderHtml();
         });
@@ -147,33 +146,34 @@
         showLibrary();
         showFamilies();
         showCells();
-
       }
 
       function getLibraryById(libId) {
-        for (let i = 0; i < masterData.length; i++) {
-          if (libId == masterData[i].id) {
-            return masterData[i];
-          }
-        }
-        return false;
+        return libId in masterData ? libId : false;
       }
 
       function showLibrary() {
+        let libraries = Object.keys(masterData);
         let htmlString = `<select name="All" id="library" onchange="onChangeLibrary(this)">
                           <option value="">All</option>`;
-        for (let i = 0; i < masterData.length; i++) {
-          htmlString += `<option value="${masterData[i].id}">${masterData[i].id}</option>`
+        for (let i = 0; i < libraries.length; i++) {
+          htmlString += `<option value="${libraries[i]}">${libraries[i]}</option>`
         }
         htmlString += '</select>';
         $("#library_div").html(htmlString)
       }
 
       function onChangeLibrary(event) {
-        console.log('onchange library ', event.value);
         let find = false;
         const libData = getLibraryById(event.value);
-        libData ? showFamilies(event.value, libData.families) : showFamilies();
+        if (libData) {
+          showFamilies(event.value, masterData[event.value])
+        } else {
+          showFamilies();
+          showCells();
+          resetView();
+        }
+
       }
 
       function showFamilies(libId = '', familyData = []) {
@@ -191,64 +191,76 @@
         const arr = event.value.split("||");
         const libId = arr[0];
         const libData = getLibraryById(libId);
-        console.log('libData', libData);
-        libData ? showCells(arr[0], arr[1], libData.files) : showCells();
+        libData ? fetchCellsList([arr[0] + arr[1]]) : showCells();
       }
 
-      function showCells(libId = '', familyId = '', files = []) {
-        let cells = [];
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].includes(libId + familyId)) {
-            const arr = files[i].split('/');
-            var cell = arr[arr.length - 2] || arr[arr.length - 1];
-            cell && cells.push(cell);
-          }
-        }
-        cells = [...new Set(cells)];
+      function fetchCellsList(familyIds = []) {
+        $.ajax({
+          url: "/filter",
+          type: 'post',
+          data: JSON.stringify({ familyIds }),
+          contentType: "application/json; charset=utf-8",
+          traditional: true,
+        }).then((data) => {
+          showCells(data)
+        });
+      }
+
+      function showCells(cells = {}) {
+        const familes = Object.keys(cells);
         let htmlString = `<select id="families" onchange="onChangeCells(this)">
                           <option value="">All</option>`;
-        for (let i = 0; i < cells.length; i++) {
-          htmlString += `<option value="${libId}||${familyId}||${cells[i]}">${cells[i]}</option>`
+        for (let i = 0; i < familes.length; i++) {
+          htmlString += `<optgroup label="${familes[i]}">`;
+          for (let j = 0; j < cells[familes[i]].length; j++) {
+            htmlString += `<option value="${cells[familes[i]][j]}">${cells[familes[i]][j]}</option>`
+          }
+          htmlString += `    </optgroup>`;
         }
         htmlString += '</select>';
-        $("#cells_div").html(htmlString)
+        $("#cells_div").html(htmlString);
       }
 
       function onChangeCells(event) {
-        const arr = event.value.split("||");
-        const libId = arr[0];
+        const libId = event.value.slice(0, 3);
         const libData = getLibraryById(libId);
-        libData ? showLayersOption(arr[0], arr[2], libData.files, libData.path) : showLayersOption();
+        libData ? fetchLayers([event.value]) : showLayersOption();
+        // libData ? showLayersOption(arr[0], arr[2], libData) : showLayersOption();
       }
 
-      function showLayersOption(libId = '', cellId = '', files = [], rootDir = '') {
-        let layers = [];
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].includes(cellId)) {
-            const arr = files[i].split('/');
-            const layer = files[i].replace(/^.*[\\\/]/, '');
-            layer && layers.push({ layer, file: files[i] });
-          }
-        }
-        if (layers.length) {
+      function fetchLayers(cellIds = []) {
+        $.ajax({
+          url: "/filter",
+          type: 'post',
+          data: JSON.stringify({ cellIds }),
+          contentType: "application/json; charset=utf-8",
+          traditional: true,
+        }).then((data) => {
+          showLayersOption(data);
+        });
+      }
+
+      function showLayersOption(cells = {}) {
+        const cellIds = Object.keys(cells);
+        if (cellIds.length) {
           let htmlString = `<tr>
 		          <th style="width: 50%;">Layers</th>
               <th style="width: 50%;">Visibility</th>
              </tr>`;
-          for (let i = 0; i < layers.length; i++) {
-            const imgPath = `${libId}/${layers[i].file}`;
-            htmlString += `<tr>
-							<td>${layers[i].layer}</td>
+          for (let i = 0; i < cellIds.length; i++) {
+            for (let j = 0; j < cells[cellIds[i]].layer.length; j++) {
+              const imgPath = cells[cellIds[i]].path + "/" + cellIds[i] + "/" + cells[cellIds[i]].layer[j];
+              htmlString += `<tr>
+							<td>${cells[cellIds[i]].layer[j]}</td>
 							<td>
-								<input type="checkbox" class="layer-selector" id="layer_${`${libId}_${cellId}`}_${i}" img_url="${imgPath}" />
+								<input type="checkbox" class="layer-selector" id="layer_${cellIds[i]}_${i}" img_url="${imgPath}" />
 							</td>
 						</tr>`
+            }
           }
-
           $("#layer_table").html(htmlString);
 
           $('input.layer-selector').on('change', function () {
-            console.log('i am here', this);
             if (this.checked) {
               addLayer(this.id, $("#" + this.id).attr("img_url"));
             } else {
@@ -267,6 +279,11 @@
 
       function removeLayer(id) {
         $('#layer_image_' + id).remove();
+      }
+
+      function resetView() {
+        $("#layers_chart").html('');
+        $("#layer_table").html('');
       }
 
     </script>

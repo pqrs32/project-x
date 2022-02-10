@@ -4,9 +4,19 @@ const path = require('path');
 const config = require('./config.json');
 
 
+console.log('Config JSON-->', config);
 
-console.log('config json', config);
-
+const getLibraryWithFamilys = () => {
+    const data = {};
+    if (config.length) {
+        config.forEach(item => {
+            const libId = item.name.slice(0, 3);
+            const familyId = item.name.slice(3, 10);
+            data[libId] = libId in data ? [... new Set([...data[libId], familyId])] : [familyId];
+        })
+    }
+    return data;
+}
 
 function fileReader(dir, files_) {
     files_ = files_ || [];
@@ -16,38 +26,54 @@ function fileReader(dir, files_) {
         if (fs.statSync(name).isDirectory()) {
             fileReader(name, files_);
         } else {
-            files_.push(name);
+            files_.push(name.replace(path.join(dir + "/"), ''));
         }
     }
     return files_;
 }
 
-
-function getFamilies(dir, files) {
-    const families = [];
-    files.map(file => {
-        const f = file.replace(dir, '').slice(0, 7);
-        f && families.push(f);
-    })
-    return [...new Set(families)];
+const getLibByFamilyId = (fid) => {
+    return config.find(item => item.name.includes(fid));
 }
 
+const searchCellinFolder = (path) => {
+    return fs.readdirSync(path).filter(function (file) {
+        return fs.statSync(path + '/' + file).isDirectory();
+    });
+}
 
-const prepairData = () => {
-    let res = [];
-    if (config?.length) {
-        config.forEach(item => {
-            let dir = item.path;
-            const files = fileReader(dir);
-            const families = getFamilies(path.join(dir + "/" + item.name), files);
-            res.push({
-                id: item.name,
-                families: families,
-                files: files.map(file => file.replace(path.join(dir + "/"), ''))
-            })
-        })
-    }
+const searchCellsByFamily = (fids) => {
+    const res = {};
+    fids.forEach(family => {
+        const libData = getLibByFamilyId(family);
+        const cells = libData ? searchCellinFolder(libData.path) : [];
+        res[family] = cells.filter(cell => cell.includes(family));
+    })
     return res;
 }
 
-module.exports = { prepairData, config }
+const findCellDataByIds = (cellIds) => {
+    const res = {};
+    cellIds.forEach(cell => {
+        const libData = getLibByFamilyId(cell.slice(0, 10));
+        const layer = libData.path ? fileReader(path.join(libData.path + "/" + cell)) : []
+        res[cell] = {
+            path: libData.name,
+            layer,
+        };
+    })
+    return res;
+}
+
+const searchRecords = (search) => {
+    console.log(search);
+    if (search.familyIds && search.familyIds.length) {
+        return searchCellsByFamily(search.familyIds);
+    }
+    if (search.cellIds && search.cellIds.length) {
+        return findCellDataByIds(search.cellIds)
+    }
+
+}
+
+module.exports = { searchRecords, config, getLibraryWithFamilys }

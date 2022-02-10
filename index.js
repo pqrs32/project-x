@@ -1,24 +1,45 @@
 const express = require('express');
 const path = require('path');
-const { prepairData, config } = require('./reader');
+const { searchRecords, config, getLibraryWithFamilys } = require('./reader');
 
 const app = express();
 const port = process.env.PORT || "3000";
+
+app.use(
+  express.urlencoded({
+    extended: true
+  })
+)
+app.use(express.json())
+
+
 config.map(item => {
   app.use(`/${item.name}`, express.static(item.path));
 })
 
-const data = prepairData();
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname + '/index.html'));
 });
 
-app.get("/list", (req, res) => {
-  console.log('datadata', data);
-  res.send(data)
+app.get("/init", (req, res) => {
+  res.send(getLibraryWithFamilys())
 });
 
-app.listen(port, () => {
-  console.log(`Listening to requests on http://localhost:${port}`);
+app.post("/filter", (req, res) => {
+  res.send(searchRecords(req.body));
 });
+
+
+
+const server = app.listen(port, () => {
+  const port = server.address().port;
+  const url = `http://localhost:${port}`;
+  console.log(`Listening to requests on -  ${url}`);
+});
+
+process.on('SIGTERM', () => {
+  server.close(() => {
+    console.log('Process terminated')
+  })
+})
