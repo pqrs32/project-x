@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<html>
+<style>
+  * {
+    padding: 0;
+    margin: 0;
+  }
+
+  table {
+    margin: 15px;
+  }
+
+  table,
+  th,
+  td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px 10px;
+    text-align: left;
+  }
+
+  input,
+  select {
+    width: 90%;
+    border: 0;
+  }
+
+  input:focus-visible,
+  select:focus-visible {
+    outline: none;
+  }
+
+  .layer1 {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+  .layer2 {
+    position: absolute;
+    left: 450px;
+    top: 0px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+  .layer3 {
+    position: absolute;
+    left: 0px;
+    top: 350px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+  .layer4 {
+    position: absolute;
+    left: 450px;
+    top: 350px;
+    width: 450px;
+    height: 450px
+  }
+
+  #controlLayer {
+    visibility: visible;
+  }
+
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 62.5%;
+    /* 16px * 62.5 = 10px = 1rem */
+  }
+
+  body {
+    height: 100vh;
+    font: 1.6rem Helvetica, Arial;
+    margin: 0;
+  }
+
+  a {
+    color: #000000;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #f08040;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  input,
+  button,
+  select,
+  textarea {
+    font: 1.6rem helvetica;
+    padding: 1rem;
+    border: 0.1rem #808080 solid;
+    border-radius: 0.5rem;
+  }
+
+  input:hover,
+  button:hover {
+    border: 0.1rem #404040 solid;
+  }
+
+  button.primary {
+    background-color: #f0c040;
+  }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(16, 16, 16, 0.5);
+  }
+
+  .overlay.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+  }
+
+  .overlay>div {
+    background-color: #ffffff;
+    color: #000000;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    max-width: 40rem;
+  }
+
+  .overlay>div>* {
+    margin: 2rem;
+  }
+
+  .fw {
+    width: 100%;
+  }
+
+  .success {
+    color: #40c040;
+  }
+
+  .error {
+    color: #c04040;
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-areas:
+      'header'
+      'main'
+      'footer';
+    grid-template-columns: 1fr;
+    grid-template-rows: 5rem 1fr 5rem;
+    height: 100%;
+  }
+
+  header {
+    grid-area: header;
+    background-color: #0879cd;
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+  }
+
+  header a {
+    color: #ffffff;
+    text-decoration: none;
+    padding-right: 1rem;
+  }
+
+  header a:hover {
+    color: #cfe2f3;
+  }
+
+  .brand a {
+    font-weight: bold;
+    font-size: 3rem;
+    padding-left: 1rem;
+  }
+
+  footer {
+    background-color: #0879cd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+  }
+
+  /* Products */
+  .products {
+    display: flex;
+    flex-wrap: wrap;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+  }
+
+  .products li {
+    flex: 0 1 30rem;
+    margin: 1rem;
+    margin-bottom: 0;
+    height: 42rem;
+    border-top: 0.2rem #e0e0e0 solid;
+  }
+
+  .product {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
+  }
+
+  .product img {
+    max-height: 26rem;
+    max-width: 22rem;
+    margin-top: 2rem;
+  }
+
+  .product-name {
+    line-height: 2.2rem;
+  }
+
+  .product-brand {
+    font-size: 1.2rem;
+    color: #808080;
+  }
+
+  .product-price {
+    font-size: 2rem;
+  }
+
+  .product-price span {
+    font-size: 1.2rem;
+  }
+
+  /* Rating */
+  .rating {
+    color: #ffc000;
+    font-size: 1.8rem;
+  }
+
+  .rating span:last-child {
+    color: #444444;
+    font-size: 1.4rem;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  /* Product Details */
+  .details {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .details-image {
+    flex: 2 1 60rem;
+  }
+
+  .details-image img {
+    max-width: 60rem;
+    width: 100%;
+  }
+
+  .details-info,
+  .details-action {
+    flex: 1 1 30rem;
+  }
+
+  .details-info ul,
+  .details-action ul {
+    padding: 0;
+    list-style-type: none;
+  }
+
+  .details-info h1 {
+    font-size: 2rem;
+    margin: 0;
+  }
+
+  .details-info li,
+  .details-action li {
+    margin-bottom: 1rem;
+  }
+
+  .details-action {
+    border: 0.1rem #808080 solid;
+    border-radius: 0.5rem;
+    background-color: #f8f8f8;
+    padding: 1rem;
+  }
+
+  /* Form */
+  .form-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100%;
+  }
+
+  .form-items {
+    display: flex;
+    flex-direction: column;
+    width: 32rem;
+    padding: 2rem;
+    border: 0.1rem #c0c0c0 solid;
+    border-radius: 0.5rem;
+    list-style-type: none;
+  }
+
+  .form-items li {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+  }
+
+  .form-container h1 {
+    font-size: 2.5rem;
+  }
+
+  /* Dashboard */
+  .dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    height: 100%;
+  }
+
+  .dashboard h1 {
+    font-size: 3rem;
+    margin: 1rem 0;
+  }
+
+  .dashboard-menu {
+    flex: 1 1 20rem;
+    background-color: #f0f0f0;
+  }
+
+  .dashboard-menu ul {
+    padding: 0;
+  }
+
+  .dashboard-menu a {
+    display: flex;
+    padding: 1rem;
+    padding-left: 2rem;
+    justify-content: space-between;
+  }
+
+  .dashboard-menu a:hover {
+    background-color: #c0c0c0;
+  }
+
+  .dashboard-menu li.selected a {
+    background-color: #c0c0c0;
+    color: #f08040;
+  }
+
+  .dashboard-content {
+    flex: 4 1 80rem;
+    padding: 1rem;
+  }
+
+  .order-list button,
+  .product-list button {
+    font-size: 1.3rem;
+    padding: 0.5rem;
+  }
+
+  .tr-action {
+    width: 10rem;
+  }
+
+  .summary-items {
+    display: flex;
+    justify-content: space-around;
+    list-style-type: none;
+    flex-wrap: wrap;
+    padding: 0;
+    margin: 0;
+  }
+
+  .summary-items>li {
+    border: 0.1rem #c0c0c0 solid;
+    margin: 2rem;
+    border-radius: 0.5rem;
+    flex: 1 1 20rem;
+  }
+
+  .summary-title {
+    background-color: #e0e0e0;
+    font-size: 2rem;
+    padding: 1rem;
+  }
+
+  .summary-body {
+    font-size: 4rem;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .summary-title.color1 {
+    background-color: #f0e0e0;
+  }
+
+  .summary-title.color2 {
+    background-color: #e0f0e0;
+  }
+
+  .summary-title.color3 {
+    background-color: #e0e0f0;
+  }
+
+  .charts {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .charts>div {
+    flex: 1;
+  }
+
+  /* search */
+  .search {
+    width: 40%;
+  }
+
+  form.search-form input[type='text'] {
+    float: left;
+    width: 80%;
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  form.search-form button {
+    float: left;
+    width: 40px;
+    background: #f0c040;
+
+    border-left: none;
+    cursor: pointer;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  form.search-form button:hover {
+    background: #0b7dda;
+  }
+
+  /* Clear floats */
+  form.search-form::after {
+    content: '';
+    clear: both;
+    display: table;
+  }
+
+  /* Aside */
+  aside {
+    position: fixed;
+    width: 30rem;
+    background-color: #ffffff;
+    height: 100%;
+    z-index: 1;
+    transform: translateX(-30.1rem);
+    transition: all 0.5s;
+    border-right: 0.1rem #808080 solid;
+  }
+
+  aside.open {
+    transform: translateX(0);
+  }
+
+  .aside-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 0.5rem 1rem 2rem;
+    color: #808080;
+  }
+
+  .aside-close-button {
+    width: 3rem;
+    height: 3rem;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  ul.categories {
+    padding: 0;
+  }
+
+  .categories>li {
+    list-style-type: none;
+  }
+
+  .categories>li>a {
+    display: flex;
+    padding: 1rem;
+    padding-left: 2rem;
+    justify-content: space-between;
+  }
+
+  .categories>li>a>span {
+    font-size: 1.4rem;
+    color: #808080;
+  }
+
+  .categories>li>a:hover span {
+    color: #444444;
+  }
+
+  .categories>li>a:hover {
+    background-color: #f0f0f0;
+    color: #444444;
+  }
+
+  .brand button {
+    font-size: 3rem;
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  /* review */
+
+  .review {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  .review li {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+</style>
+
+<body>
+
+  <div class="grid-container">
+    <header>
+      <div class="brand">
+        <button id="aside-open-button">
+          &#9776;
+        </button>
+        <a href="/#/">Magic Viewer</a>
+      </div>
+      <div class="search">
+        <form class="search-form" id="search-form">
+          <input type="text" name="q" id="q" />
+          <a href=# id=process_input><button class='btn btn-default'>Submit</button></a>
+        </form>
+      </div>
+      <div class="brand">
+        <a href="/#/intel">intel</a>
+      </div>
+
+    </header>
+
+    <div style="display: flex;">
+      <div style="width: 30%;">
+        <table style="width: 90%;">
+
+          <div id="relation_div">
+        </table>
+
+        <table style="width: 90%;margin-top: 50px; position:relative" id="layer_table">
+
+        </table>
+      </div>
+
+      <div style="width: 90%;margin-top: 50px; position:relative" id="layers_chart">
+      </div>
+    </div>
+
+    <footer>
+      intel confidential
+    </footer>
+  </div>
+
+  <script>
+    let masterData = [];
+    let selectedCell = { cellIds: [], layers: [] };
+    $(document).ready(function () {
+      $.ajax({
+        url: "/initRelationView"
+      }).then((data) => {
+        masterData = data;
+        renderHtml();
+      });
+    });
+
+    function renderHtml() {
+      showRelatedCells();
+    }
+
+    function showRelatedCells() {
+      const relation = masterData.relationID;
+      const cells = masterData.cellsID;
+      if (cells.length) {
+        let htmlString = `<tr>
+		          <th style="width: 25%;">Relation</th>
+              <th style="width: 65%;">Cells</th>
+              <th style="width: 10%;">Enable</th>
+             </tr>`;
+        //for (let i = 0; i < masterData.data.length; i++) {
+        for (let i = 0; i < cells.length; i++) {
+          htmlString += `<tr>
+                <td>${relation}</td>
+                <td>${cells[i].cell}</td>
+							<td>
+								<input type="checkbox" class="cell-selector" id="${cells[i].cell}" />
+							</td>
+						</tr>`
+        }
+        $("#relation_div").html(htmlString);
+
+        $('input.cell-selector').on('change', function () {
+          if (this.checked) {
+            if (selectedCell.cellIds.length >= 4) {
+              $(this).prop('checked', !$(this).prop('checked'));
+              alert("Maximum 4 cell selection is allowed.")
+              return;
+            }
+            if (!selectedCell.cellIds.length) {
+              showCellLayer(this.id);
+            }
+            !selectedCell.cellIds.includes(this.id) && selectedCell.cellIds.push(this.id);
+            addLayer();
+
+          } else {
+            selectedCell.cellIds = selectedCell.cellIds.filter(item => item != this.id);
+
+            if (!selectedCell.cellIds.length) {
+              $("#layer_table").html('');
+              $("#layers_chart").html('');
+            }
+            removeLayerByCellId(this.id)
+          }
+        });
+
+      }
+    }
+
+    function getCellById(cellId) {
+      if (masterData?.cellsID.length) {
+        return masterData?.cellsID.find(item => item.cell == cellId);
+      }
+      return false;
+    }
+
+
+    function showCellLayer(cellId) {
+      let cellData = getCellById(cellId);
+      if (cellData?.layers.length) {
+        let layers = cellData.layers;
+        let htmlString = `<tr>
+		          <th style="width: 65%;">layer</th>
+              <th style="width: 10%;">Enable</th>
+             </tr>`;
+        for (let i = 0; i < layers.length; i++) {
+          layerName = layers[i].split("/").slice(-1)[0];
+          htmlString += `<tr>
+                <td>${layerName}</td>
+							<td>
+								<input type="checkbox" class="layer-selector" id="${layerName}" cell_id="${cellId}" />
+							</td>
+						</tr>`
+        }
+        $("#layer_table").html(htmlString);
+        $('input.layer-selector').on('change', function () {
+          if (this.checked) {
+            selectedCell.layers
+            !selectedCell.layers.includes(this.id) && selectedCell.layers.push(this.id);
+
+            addLayer();
+          } else {
+            selectedCell.layers = selectedCell.layers.filter(item => item != this.id);
+
+            if (!selectedCell.layers.length) {
+              $("#layers_chart").html('');
+            } else {
+              removeLayerByLayerId(this.id);
+            }
+          }
+        });
+      }
+    }
+
+    function getPath(cellId, layer) {
+      cellData = getCellById(cellId);
+      return cellData.layers.find(item => item.includes(layer));
+    }
+
+    function addLayer() {
+      let htmlString = '';
+      $("#layers_chart").html('');
+      selectedCell.layers.map((layer) => {
+        selectedCell.cellIds.map((cell, i) => {
+          imageUrl = getPath(cell, layer);
+          htmlString += `<embed id="layer_image_${cell}_${layer.replace(".", "_")}" class="layer${i + 1}" src="/file?path=${imageUrl}" />`
+        })
+      })
+      $("#layers_chart").append(htmlString);
+    }
+
+    function removeLayerByCellId(cell) {
+      selectedCell.layers.map((layer) => {
+        $("#layer_image_" + cell + "_" + layer.replace(".", "_")).remove();
+      })
+    }
+
+    function removeLayerByLayerId(layer) {
+      selectedCell.cellIds.map((cell, i) => {
+        $("#layer_image_" + cell + "_" + layer.replace(".", "_")).remove();
+      })
+    }
+
+    function resetView() {
+      $("#layers_chart").html('');
+      $("#layer_table").html('');
+    }
+
+  </script>
+</body>
+
+</html>
